@@ -4,25 +4,43 @@ let books = require("./booksdb.js");
 const regd_users = express.Router();
 
 let users = [];
+users.push({ username: "testUser", password: "testPassword" });
 
-const isValid = (username)=>{ //returns boolean
-//write code to check is the username is valid
-}
+// Check if username is valid
+const isValid = (username) => {
+  return username && username.trim().length > 0;
+};
 
-const authenticatedUser = (username,password)=>{ //returns boolean
-//write code to check if username and password match the one we have in records.
-}
+// Check if the user is authenticated
+const authenticatedUser = (username, password) => {
+  const user = users.find((user) => user.username === username && user.password === password);
+  return !!user;
+};
 
-//only registered users can login
-regd_users.post("/login", (req,res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+// Only registered users can login
+regd_users.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and password are required" });
+  }
+
+  if (authenticatedUser(username, password)) {
+    // Generate JWT Token
+    const token = jwt.sign({ username }, "fingerprint_customer", { expiresIn: "1h" });
+
+    // Set the token in the session
+    req.session.token = token;
+
+    return res.status(200).json({ message: "Login successful", token });
+  } else {
+    return res.status(401).json({ message: "Invalid username or password" });
+  }
 });
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  return res.status(300).json({ message: "Yet to be implemented" });
 });
 
 module.exports.authenticated = regd_users;
