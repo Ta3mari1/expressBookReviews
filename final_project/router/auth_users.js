@@ -40,9 +40,73 @@ regd_users.post("/login", (req, res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  return res.status(300).json({ message: "Yet to be implemented" });
-});
+  const { isbn } = req.params; // ISBN from the URL
+  const { review } = req.query; // Review from the query
+  const username = req.session.username; // Username from the session
+  if (!username) {
+    return res.status(401).json({ message: "Unauthorized. Please log in to post a review." });
+  }
 
+  if (!isbn || !review) {
+    return res.status(400).json({ message: "ISBN and review are required." });
+  }
+
+  const book = books.find((b) => b.isbn === isbn);
+
+  if (!book) {
+    return res.status(404).json({ message: "Book not found." });
+  }
+  if (!book.reviews) {
+    book.reviews = {}; // Initialize the reviews object if it doesn't exist
+  }
+  if (book.reviews[username]) {
+    book.reviews[username] = review; // Update the existing review
+    return res.status(200).json({ message: "Review updated successfully.", book });
+  } else {
+    book.reviews[username] = review; // Add a new review
+    return res.status(201).json({ message: "Review added successfully.", book });
+  }
+}
+);
+
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+  const { isbn } = req.params; // Extract ISBN from the route parameters
+  const username = req.session.username; // Extract the logged-in username from the session
+
+  // Validate if the user is logged in
+  if (!username) {
+    return res.status(401).json({ message: "Unauthorized. Please log in to delete your review." });
+  }
+
+  // Find the book by ISBN
+  const book = books.find((b) => b.isbn === isbn);
+
+  if (!book) {
+    return res.status(404).json({ message: "Book not found." });
+  }
+
+  // Check if the book has reviews
+  if (!book.reviews || !book.reviews[username]) {
+    return res.status(404).json({ message: "You have not reviewed this book." });
+  }
+
+  // Delete the user's review
+  delete book.reviews[username];
+
+  return res.status(200).json({ message: "Review deleted successfully.", book });
+
+
+
+
+
+
+
+
+
+
+
+});
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
